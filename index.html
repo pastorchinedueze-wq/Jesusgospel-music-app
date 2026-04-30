@@ -87,10 +87,10 @@ async function loadSongs() {
       let cover = song["Cover image URL"] || song["Cover Image URL"] || "";
 
       // 🔥 FIX GOOGLE DRIVE AUDIO
-      if(audio.includes("id=")){
-        let id = audio.split("id=")[1].split("&")[0];
-        audio = "https://drive.google.com/uc?export=open&id=" + id;
-      }
+      if(audio && audio.includes("id=")){
+  let id = audio.split("id=")[1].split("&")[0];
+  audio = "https://drive.google.com/uc?export=media&id=" + id;
+}
 
       // 🔥 FIX IMAGE
       if(cover.includes("id=")){
