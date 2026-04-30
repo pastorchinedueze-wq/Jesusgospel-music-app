@@ -2,110 +2,128 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gospel Music</title>
+<title>Jesus Gospel Music</title>
 
 <style>
 body {
   margin: 0;
   font-family: Arial;
-  background: #000;
+  background: linear-gradient(180deg, #000000, #1a001a);
   color: white;
 }
 
 .header {
-  text-align: center;
-  padding: 15px;
   background: #ff4da6;
-  font-size: 20px;
+  padding: 15px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
 }
 
 .upload-btn {
-  margin: 10px;
-  padding: 12px;
+  display: block;
+  margin: 15px;
+  padding: 15px;
   background: #ff4da6;
+  color: white;
   text-align: center;
   border-radius: 10px;
+  text-decoration: none;
+  font-weight: bold;
 }
 
 .card {
-  background: #111;
-  margin: 10px;
-  padding: 10px;
-  border-radius: 10px;
+  background:#111;
+  padding:10px;
+  margin:10px;
+  border-radius:10px;
+}
+
+.card img {
+  width:100%;
+  border-radius:10px;
+}
+
+.title {
+  color:pink;
+  margin:10px 0 5px;
+}
+
+.artist {
+  margin:0 0 10px;
+  color:#ccc;
 }
 </style>
+
 </head>
 
 <body>
 
 <div class="header">🎶 Gospel Music</div>
 
-<div class="upload-btn" onclick="openForm()">📤 Upload Song</div>
+<a class="upload-btn" href="https://docs.google.com/forms/d/e/1FAIpQLSd13X-aQk07h_aducHgEJ2t-aaSk1ZIje6x7uyj-W8sGu7qHQ/viewform">
+📤 Upload Song
+</a>
 
-<div id="music"></div>
+<div id="music">Loading songs...</div>
 
 <script>
 
-// FORM LINK
-function openForm(){
-  window.open("https://docs.google.com/forms/d/e/1FAIpQLSd13X-aQk07h_aducHgEJ2t-aaSk1ZIje6x7uyj-W8sGu7qHQ/viewform");
+const sheetURL = "https://opensheet.elk.sh/1_D1PStr46kkrBKK7LnBywlW1ukSaoqoDpSaA0U4UB5U/Form%20Responses%201";
+
+async function loadSongs() {
+  try {
+    const res = await fetch(sheetURL);
+    const data = await res.json();
+
+    const musicDiv = document.getElementById("music");
+    musicDiv.innerHTML = "";
+
+    data.reverse().forEach(song => {
+
+      let title = song["Song Title"] || "";
+      let artist = song["Artist Name"] || "";
+      let audio = song["Audio Link (mp3)"] || "";
+      let cover = song["Cover image URL"] || song["Cover Image URL"] || "";
+
+      // 🔥 FIX GOOGLE DRIVE AUDIO
+      if(audio.includes("id=")){
+        let id = audio.split("id=")[1].split("&")[0];
+        audio = "https://drive.google.com/uc?export=open&id=" + id;
+      }
+
+      // 🔥 FIX IMAGE
+      if(cover.includes("id=")){
+        let id = cover.split("id=")[1].split("&")[0];
+        cover = "https://drive.google.com/uc?export=view&id=" + id;
+      }
+
+      // ❌ skip if no audio
+      if(!audio) return;
+
+      musicDiv.innerHTML += `
+      <div class="card">
+        ${cover ? `<img src="${cover}">` : ""}
+        <h3 class="title">${title}</h3>
+        <p class="artist">${artist}</p>
+        <audio controls src="${audio}"></audio>
+      </div>
+      `;
+    });
+
+    if(data.length === 0){
+      musicDiv.innerHTML = "No songs yet.";
+    }
+
+  } catch (err) {
+    document.getElementById("music").innerHTML = "Error loading songs.";
+    console.error(err);
+  }
 }
 
-// SHEET API
-const API_URL = "https://opensheet.elk.sh/1_D1PStr46kkrBKK7LnBywlW1ukSaoqoDpSaA0U4UB5U/Form%20Responses%201";
-
-// LOAD SONGS
-function loadSongs(){
-
-fetch(API_URL)
-.then(res => res.json())
-.then(data => {
-
-let output = "";
-
-data.reverse().forEach(song => {
-
-// 🔥 FIX COLUMN NAMES (WITH SPACE)
-let title = song["Song Title "] || "No Title";
-let artist = song["Artist Name "] || "Unknown";
-let audio = song["Audio Link (mp3) "] || "";
-let cover = song["Cover Image URL "] || "";
-
-// 🔥 FIX GOOGLE DRIVE AUDIO
-if(audio.includes("drive.google.com")){
-let id = audio.split("id=")[1];
-audio = "https://drive.google.com/uc?export=view&id=" + id;
-}
-
-// 🔥 FIX IMAGE
-if(cover.includes("drive.google.com")){
-let id = cover.split("id=")[1];
-cover = "https://drive.google.com/uc?export=view&id=" + id;
-}
-
-if(!audio) return;
-
-output += `
-<div class="card">
-<img src="${cover}" style="width:100%;border-radius:10px">
-<h3>${title}</h3>
-<p>${artist}</p>
-<audio controls src="${audio}"></audio>
-</div>
-`;
-
-});
-
-document.getElementById("music").innerHTML = output;
-
-});
-}
-
-// FIRST LOAD
+// 🚀 AUTO LOAD + AUTO REFRESH
 loadSongs();
-
-// AUTO REFRESH
-setInterval(loadSongs, 5000);
+setInterval(loadSongs, 10000); // refresh every 10 seconds
 
 </script>
 
