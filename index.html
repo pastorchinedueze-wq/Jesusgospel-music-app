@@ -1,165 +1,200 @@
-<!DOCTYPE html><html>
+<!DOCTYPE html>
+<html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jesus Gospel Music</title><link rel="manifest" href="manifest.json"><style>
-body {
-  margin:0;
-  font-family:Arial;
-  background:#000;
-  color:white;
+<title>Jesus Is Coming Live Chat</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:#000;
+color:white;
 }
 
-.header {
-  background:#ff4da6;
-  padding:15px;
-  text-align:center;
-  font-size:22px;
-  font-weight:bold;
+.header{
+background:#ff1493;
+padding:18px;
+text-align:center;
+font-size:28px;
+font-weight:bold;
 }
 
-.upload-btn {
-  display:block;
-  margin:10px;
-  padding:12px;
-  background:#ff4da6;
-  color:white;
-  text-align:center;
-  border-radius:10px;
-  text-decoration:none;
+.online{
+text-align:center;
+padding:5px;
+background:#111;
+color:lime;
+font-size:14px;
 }
 
-#search {
-  width:90%;
-  margin:10px;
-  padding:10px;
-  border-radius:8px;
-  border:none;
+#chat{
+height:60vh;
+overflow-y:auto;
+padding:10px;
 }
 
-.card {
-  background:#111;
-  margin:10px;
-  padding:10px;
-  border-radius:10px;
+.message{
+background:#111;
+padding:10px;
+margin:10px;
+border-radius:12px;
 }
 
-.title {
-  color:#ff4da6;
+.name{
+color:#ff1493;
+font-weight:bold;
+margin-bottom:5px;
 }
 
-iframe {
-  width:100%;
-  height:200px;
-  border-radius:10px;
+.time{
+font-size:11px;
+color:gray;
+margin-top:5px;
 }
 
-audio {
-  width:100%;
+.input-area{
+position:fixed;
+bottom:0;
+width:100%;
+background:#111;
+padding:10px;
+display:flex;
+gap:5px;
+box-sizing:border-box;
 }
 
-.like {
-  background:#ff4da6;
-  border:none;
-  padding:6px 10px;
-  border-radius:6px;
-  color:white;
-  margin-top:5px;
-}
-</style></head><body><div class="header">🎶 Gospel Music</div><a class="upload-btn" href="https://docs.google.com/forms/d/e/1FAIpQLSd13X-aQk07h_aducHgEJ2t-aaSk1ZIje6x7uyj-W8sGu7qHQ/viewform">
-📤 Upload Song
-</a><input id="search" placeholder="Search song or artist..."><div id="music"></div><script>
-const sheetURL = "https://opensheet.elk.sh/1_D1PStr46kkrBKK7LnBywlW1ukSaoqoDpSaA0U4UB5U/Form%20Responses%201";
-
-let songs = [];
-
-function getYouTubeID(url) {
-  const regExp = /(?:youtube\\.com.*v=|youtu\\.be\\/)([^&]+)/;
-  const match = url.match(regExp);
-  return match ? match[1] : null;
+input{
+flex:1;
+padding:12px;
+border:none;
+border-radius:10px;
+font-size:16px;
 }
 
-function fixDriveLink(link){
-  if(link && link.includes("id=")){
-    let id = link.split("id=")[1];
-    return "https://drive.google.com/uc?export=download&id=" + id;
-  }
-  return link;
+button{
+background:#ff1493;
+border:none;
+color:white;
+padding:12px 18px;
+border-radius:10px;
+font-weight:bold;
 }
 
-async function loadSongs(){
-  const res = await fetch(sheetURL);
-  songs = await res.json();
-  songs.reverse();
-  displaySongs(songs);
+.admin{
+border-left:4px solid gold;
+background:#221100;
+}
+</style>
+
+</head>
+<body>
+
+<div class="header">
+✝️ Jesus Is Coming Chat
+</div>
+
+<div class="online">
+🟢 Live Chat Online
+</div>
+
+<div id="chat"></div>
+
+<div class="input-area">
+<input type="text" id="name" placeholder="Your name">
+<input type="text" id="message" placeholder="Type message...">
+<button onclick="sendMessage()">Send</button>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+addDoc,
+query,
+orderBy,
+onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDg7jv9EhDE9qb_6hIrKxVKjCLUX_hGlQU",
+  authDomain: "jesus-is-coming-gospel.firebaseapp.com",
+  projectId: "jesus-is-coming-gospel",
+  storageBucket: "jesus-is-coming-gospel.firebasestorage.app",
+  messagingSenderId: "917609067173",
+  appId: "1:917609067173:web:b2bc8b90628f32620f534c",
+  measurementId: "G-LZZXBJ0NR0"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const chatDiv = document.getElementById("chat");
+
+window.sendMessage = async function(){
+
+const name = document.getElementById("name").value;
+const message = document.getElementById("message").value;
+
+if(!name || !message){
+alert("Enter name and message");
+return;
 }
 
-function displaySongs(list){
-  const div = document.getElementById("music");
-  div.innerHTML = "";
-
-  list.forEach(song=>{
-
-    let status = (song["Status"] || "").toLowerCase();
-
-    // ✅ ADMIN FILTER (only approved songs show)
-    if(status !== "approved") return;
-
-    let title = song["Song Title"] || "";
-    let artist = song["Artist Name"] || "";
-    let youtube = song["YouTube Link"] || "";
-    let audio = fixDriveLink(song["Audio Link (mp3)"] || "");
-
-    let ytID = getYouTubeID(youtube);
-
-    div.innerHTML += `
-    <div class="card">
-      <h3 class="title">${title}</h3>
-      <p>${artist}</p>
-
-      ${
-        ytID 
-        ? `<iframe src="https://www.youtube.com/embed/${ytID}" allowfullscreen></iframe>`
-        : audio
-        ? `<audio controls src="${audio}"></audio>`
-        : `<p style="color:red;">No playable source</p>`
-      }
-
-      <button class="like" onclick='like(${JSON.stringify(song)})'>❤️ Save</button>
-    </div>
-    `;
-  });
-}
-
-// ❤️ FAVORITES
-function like(song){
-  let fav = JSON.parse(localStorage.getItem("fav") || "[]");
-  fav.push(song);
-  localStorage.setItem("fav", JSON.stringify(fav));
-  alert("Saved ❤️");
-}
-
-// 🔍 SEARCH
-document.getElementById("search").addEventListener("input", e=>{
-  let v = e.target.value.toLowerCase();
-
-  let filtered = songs.filter(s=>{
-    return (
-      (s["Song Title"]||"").toLowerCase().includes(v) ||
-      (s["Artist Name"]||"").toLowerCase().includes(v)
-    );
-  });
-
-  displaySongs(filtered);
+await addDoc(collection(db,"messages"),{
+name:name,
+message:message,
+time:Date.now()
 });
 
-loadSongs();
+document.getElementById("message").value = "";
 
-// 🔄 AUTO REFRESH
-setInterval(loadSongs, 15000);
+};
 
-// PWA
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
+const q = query(
+collection(db,"messages"),
+orderBy("time")
+);
+
+onSnapshot(q,(snapshot)=>{
+
+chatDiv.innerHTML = "";
+
+snapshot.forEach((doc)=>{
+
+const data = doc.data();
+
+let adminClass = "";
+
+if(
+data.name.toLowerCase().includes("apostle") ||
+data.name.toLowerCase().includes("admin") ||
+data.name.toLowerCase().includes("pastor")
+){
+adminClass = "admin";
 }
-</script></body>
+
+chatDiv.innerHTML += `
+<div class="message ${adminClass}">
+<div class="name">${data.name}</div>
+<div>${data.message}</div>
+<div class="time">
+${new Date(data.time).toLocaleString()}
+</div>
+</div>
+`;
+
+});
+
+chatDiv.scrollTop = chatDiv.scrollHeight;
+
+});
+
+</script>
+
+</body>
 </html>
